@@ -1,49 +1,57 @@
 package me.arasple.mc.brevis
 
-import io.izzel.taboolib.kotlin.Tasks
-import io.izzel.taboolib.module.command.base.BaseCommand
-import io.izzel.taboolib.module.command.base.BaseMainCommand
-import io.izzel.taboolib.module.command.base.CommandType
-import io.izzel.taboolib.module.command.base.SubCommand
 import me.arasple.mc.brevis.api.Settings
 import me.arasple.mc.brevis.module.shortcut.Session
 import me.arasple.mc.brevis.util.Performance
 import org.bukkit.Bukkit
-import org.bukkit.command.CommandSender
+import taboolib.common.platform.ProxyCommandSender
+import taboolib.common.platform.command.*
+import taboolib.common.platform.function.isPrimaryThread
+import taboolib.common.platform.function.onlinePlayers
+import taboolib.common.platform.function.submit
 
 /**
  * @author Arasple
  * @date 2021/2/25 13:11
  */
-@BaseCommand(name = "brevis", permission = "brevis.access")
-class BrevisCommand : BaseMainCommand() {
+@CommandHeader(name = "brevis", permission = "brevis.access")
+object BrevisCommand {
 
-    @SubCommand(description = "View performance monitor")
-    fun mirror(sender: CommandSender) {
-        Tasks.task(true) {
-            Performance.collect {
-                childFormat = "§8  {0}§7{1} §2[{3} ms] §7{4}%"
-                parentFormat = "§8  §8{0}§7{1} §8[{3} ms] §7{4}%"
-            }.run {
-                sender.sendMessage("\n§a§lBrevis §3§l§nPerformance Mirror\n§r")
-                print(sender, getTotal(), 0)
+    @CommandBody
+    val mirror = subCommand {
+        execute<ProxyCommandSender> { sender, _, _ ->
+            submit(async = !isPrimaryThread) {
+                Performance.collect(sender) {
+                    childFormat = "§8  {0}§7{1} §2[{3} ms] §7{4}%"
+                    parentFormat = "§8  §8{0}§7{1} §8[{3} ms] §7{4}%"
+                }.run {
+                    sender.sendMessage("\n§a§lBrevis §3§l§nPerformance Mirror\n§r")
+                    print(sender, getTotal(), 0)
+                }
             }
         }
     }
 
-    @SubCommand(description = "Reload manually", type = CommandType.CONSOLE)
-    fun reload(sender: CommandSender) {
-        Settings.onReload()
+    @CommandBody(permissionDefault = PermissionDefault.OP)
+    val reload = subCommand {
+        execute<ProxyCommandSender> { _, _, _ ->
+            Settings.onReload()
+        }
     }
 
-    @SubCommand(description = "Print debug info", arguments = ["player"])
-    fun debug(sender: CommandSender, args: Array<String>) {
-        val player = Bukkit.getPlayer(args[0])
-        if (player == null || !player.isOnline) {
-            return
+    @CommandBody
+    val debug = subCommand {
+        dynamic {
+            suggestion<ProxyCommandSender> { _, _ ->
+                onlinePlayers().map { it.name }
+            }
+            execute<ProxyCommandSender> { sender, _, argument ->
+                val player = Bukkit.getPlayer(argument)
+                if (player != null && player.isOnline) {
+                    sender.sendMessage(Session.get(player).toString())
+                }
+            }
         }
-
-        sender.sendMessage(Session.get(player).toString())
     }
 
 }

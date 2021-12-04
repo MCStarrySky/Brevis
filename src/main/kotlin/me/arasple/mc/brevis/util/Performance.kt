@@ -1,6 +1,7 @@
 package me.arasple.mc.brevis.util
 
-import io.izzel.taboolib.kotlin.Mirror
+import taboolib.common.platform.ProxyCommandSender
+import taboolib.common5.Mirror
 
 /**
  * @author Arasple
@@ -8,14 +9,16 @@ import io.izzel.taboolib.kotlin.Mirror
  */
 object Performance {
 
-    fun collect(opt: Mirror.Options.() -> Unit = {}): Mirror.MirrorCollect {
-        return MIRROR.collect(opt)
+    fun collect(sender: ProxyCommandSender, opt: Mirror.MirrorSettings.() -> Unit = {}): Mirror.MirrorCollect {
+        return MIRROR.report(sender, opt)
     }
 
     inline fun check(id: String, func: () -> Unit) {
-        MIRROR.check(id, func)
+        Mirror.mirrorData.computeIfAbsent(id) { Mirror.MirrorData() }.define()
+        func()
+        Mirror.mirrorData[id]?.finish()
     }
 
-    val MIRROR = Mirror()
+    private val MIRROR = Mirror
 
 }

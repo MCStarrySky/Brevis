@@ -1,9 +1,10 @@
 package me.arasple.mc.brevis.api
 
-import io.izzel.taboolib.kotlin.kether.KetherShell
-import io.izzel.taboolib.kotlin.kether.common.util.LocalizedException
 import me.arasple.mc.brevis.util.Performance
 import org.bukkit.entity.Player
+import taboolib.common.platform.function.adaptPlayer
+import taboolib.library.kether.LocalizedException
+import taboolib.module.kether.KetherShell
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -17,7 +18,7 @@ object BrevisAPI {
         Performance.check("Brevis:Handler:Check:React") {
             return try {
                 KetherShell.eval(script, namespace = listOf("trhologram", "trmenu")) {
-                    sender = player
+                    sender = adaptPlayer(player)
                 }
             } catch (e: LocalizedException) {
                 println("[Brevis] Unexpected exception while parsing kether shell:")

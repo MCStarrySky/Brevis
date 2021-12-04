@@ -19,7 +19,7 @@ inline class TrackType(val index: Int) {
         val INTERACT = TrackType(4)
 
         fun of(name: String): TrackType? {
-            return when (name.toUpperCase()) {
+            return when (name.uppercase()) {
                 "SNEAK", "SNEAKING" -> SNEAKING
                 "OFFHAND", "F" -> OFFHAND
                 "SWAP" -> SWAP
